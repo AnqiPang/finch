@@ -1,0 +1,89 @@
+# When a third-party action is added (i.e., `uses`), please also add it to `download-licenses` in Makefile.
+# When the installer is ready in installer private bucket, run this workflow to test it and upload to GitHub release
+name: Release Installer
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        descriptioin: "Release version"
+        required: true
+  push:
+
+permissions:
+  id-token: write # This is required for requesting the JWT
+  contents: read # This is required for actions/checkout
+env:
+  CASK: finch
+  FORK_REPO: https://github.com/AnqiPang/homebrew-cask.git
+  FORK_BRANCH: v0.1.1
+jobs:
+  macos-arm64-test-installer:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          [
+            [self-hosted, macos, arm64, 11.7],
+            [self-hosted, macos, arm64, 12.6],
+            [self-hosted, macos, arm64, 13.0],
+            [self-hosted, macos, amd64, 11.7],
+            [self-hosted, macos, amd64, 12.6],
+            [self-hosted, macos, amd64, 13.0],
+          ]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    env:
+      ACCESS_TOKEN: ${{ secrets.FINCH_BOT_TOKEN }}
+    steps:
+      - uses: actions/setup-go@v2
+        with:
+          go-version: 1.19.x
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+          submodules: recursive
+          persist-credentials: false
+      - name: Configure repo access
+        run: |
+          git config --global url.https://$ACCESS_TOKEN@github.com/.insteadOf https://github.com/
+          GOPRIVATE=github.com/runfinch go get -v github.com/runfinch/common-tests@v0.1.0
+      - name: Clean up previous files
+        run: |
+          sudo rm -rf /opt/finch
+          sudo rm -rf ~/.finch
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: ${{ secrets.ROLE }}
+          role-session-name: download-installer-session
+          aws-region: ${{ secrets.REGION }}
+      - name: Download from S3
+        run: |
+          aws s3 cp s3://${{ secrets.INSTALLER_PRIVATE_BUCKET_NAME }}/Finch-${GITHUB_REF_NAME}-aarch64.pkg /Users/ec2-user/Finch-${GITHUB_REF_NAME}-aarch64.pkg
+      - name: Set up Homebrew
+        id: set-up-homebrew
+        uses: Homebrew/actions/setup-homebrew@master
+      - name: Checkout the Fork Repo
+        run: |
+          brew update-reset 
+          cd $(brew --repo homebrew/cask)
+          git remote add fork-repo ${{ env.FORK_REPO }}
+          git fetch fork-repo
+          git checkout -B ${{ env.FORK_BRANCH }} fork-repo/${{ env.FORK_BRANCH }}
+      - name: Cask Syntax
+        run: |
+          brew audit --cask --online ${{ env.CASK }}
+          brew style --fix ${{ env.CASK }}
+      - name: Install by Homebrew
+        # Rosetta is only needed in arm64
+        run: |
+          # echo 'A' | sudo softwareupdate --install-rosetta
+          # sudo installer -pkg Finch-${GITHUB_REF_NAME}-aarch64.pkg -target /
+          brew install --cask finch
+      - name: Run e2e tests
+        run: INSTALLED=true make test-e2e
+      - name: Silently uninstall
+        run: |
+          echo 'y' | sudo bash /Applications/Finch/uninstall.sh && brew uninstall --cask finch
+      - name: Delete installer
+        run: rm -rf Finch-${GITHUB_REF_NAME}-aarch64.pkg
