@@ -40,8 +40,6 @@ jobs:
       FINCH_VESRION: 0.3.0
     steps:
       - uses: actions/checkout@v3
-        with:
-          ref: ${{ env.FINCH_TAG }}
       - name: Clean up previous files
         run: |
           cd $(brew --repo homebrew/cask) 
