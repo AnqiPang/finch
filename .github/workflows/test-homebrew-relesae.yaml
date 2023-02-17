@@ -36,7 +36,7 @@ jobs:
     runs-on: macos-latest
     timeout-minutes: 60
     env:
-      FINCH_TAG: 0.3.0
+      FINCH_TAG: v0.3.0
       FINCH_VESRION: 0.3.0
     steps:
       - uses: actions/checkout@v3
