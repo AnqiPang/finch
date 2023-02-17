@@ -50,7 +50,7 @@ jobs:
     timeout-minutes: 60
     env:
       FINCH_TAG: ${{ needs.get-latest-tag.outputs.tag }}
-      FINCH_VESRION: ${{ needs.get-latest-tag.outputs.version }}
+      FINCH_VERSION: ${{ needs.get-latest-tag.outputs.version }}
     steps:
       - uses: actions/checkout@v3
         with:
@@ -65,6 +65,7 @@ jobs:
       - name: Bump local cask version
         run: |
           brew update-reset 
+          export HOMEBREW_NO_INSTALL_FROM_API=1
           cd $(brew --repo homebrew/cask)
           echo "Update the local Finch cask with version ${FINCH_VERSION}"
           brew bump-cask-pr --write-only -f --version=${FINCH_VERSION} finch
@@ -100,7 +101,7 @@ jobs:
     timeout-minutes: 60
     env:
       FINCH_TAG: ${{ needs.get-latest-tag.outputs.tag }}
-      FINCH_VESRION: ${{ needs.get-latest-tag.outputs.version }}
+      FINCH_VERSION: ${{ needs.get-latest-tag.outputs.version }}
     steps:
       - uses: actions/checkout@v3
         with:
@@ -115,6 +116,7 @@ jobs:
       - name: Bump local cask version
         run: |
           brew update-reset 
+          export HOMEBREW_NO_INSTALL_FROM_API=1
           cd $(brew --repo homebrew/cask)
           echo "Update the local Finch cask with version ${FINCH_VERSION}"
           brew bump-cask-pr --write-only -f --version=${FINCH_VERSION} finch

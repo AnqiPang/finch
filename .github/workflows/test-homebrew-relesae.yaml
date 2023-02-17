@@ -33,14 +33,23 @@ jobs:
 
   macos-amd64-test-installer:
     needs: get-latest-tag
-    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          [
+            [self-hosted, macos, amd64, 12.6, release],
+            [self-hosted, macos, amd64, 13.0, release],
+          ]
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     env:
       FINCH_TAG: v0.3.0
       FINCH_VERSION: 0.3.0
     steps:
-      - run: brew install go lz4 automake autoconf libtool
       - uses: actions/checkout@v3
+        with:
+          ref: ${{ env.FINCH_TAG }}
       - name: Clean up previous files
         run: |
           cd $(brew --repo homebrew/cask) 
@@ -51,6 +60,7 @@ jobs:
       - name: Bump local cask version
         run: |
           brew update-reset 
+          export HOMEBREW_NO_INSTALL_FROM_API=1
           cd $(brew --repo homebrew/cask)
           echo "Update the local Finch cask with version $FINCH_VERSION"
           brew bump-cask-pr --write-only -f --version=$FINCH_VERSION finch
