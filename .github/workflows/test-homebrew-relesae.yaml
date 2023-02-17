@@ -56,6 +56,8 @@ jobs:
           cd $(brew --repo homebrew/cask)
           echo "Update the local Finch cask with version $FINCH_VERSION"
           brew bump-cask-pr --write-only -f --version=$FINCH_VERSION finch
+        env:
+          HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.FINCH_BOT_TOKEN }}
       - name: Silently install
         run: |
           cd $(brew --repo homebrew/cask)
