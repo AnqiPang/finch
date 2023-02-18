@@ -1,6 +1,6 @@
 # "release" runner tag is to make target hosts deterministic for easy clean up.
 # TODO: Remove the "release" runner tag when installer tests are stable.
-name: Release Homebrew
+name: Test Release Homebrew
 on:
   workflow_dispatch:
 
