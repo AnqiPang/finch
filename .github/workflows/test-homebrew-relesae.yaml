@@ -1,6 +1,6 @@
 # "release" runner tag is to make target hosts deterministic for easy clean up.
 # TODO: Remove the "release" runner tag when installer tests are stable.
-name: Release Homebrew
+name: Test Release Homebrew
 on:
   workflow_dispatch:
 
@@ -62,6 +62,8 @@ jobs:
       - name: Bump local cask version
         run: |
           brew update-reset 
+          # disable the default behaviour of downloading JSON files from formulae.brew.sh for pacakge installation since Homebrew 4.0.0
+          # https://brew.sh/2023/02/16/homebrew-4.0.0/
           export HOMEBREW_NO_INSTALL_FROM_API=1
           cd $(brew --repo homebrew/cask)
           echo "Update the local Finch cask with version $FINCH_VERSION"
